@@ -8,24 +8,28 @@ const int DAY = 86400;
 
 int main(int argc, char *argv[])
 {
-	// getting today in a convertible string
+	
+	// formatting the date into a string
 	time_t rawtime = time(NULL);
-	rawtime;
+	if (argc > 1 && strncmp("yesterday", argv[1], 9) == 0)
+		rawtime -= DAY;
+
 	struct tm today = *localtime(&rawtime);
 	char date_str[20];
 	strftime(date_str, 20, "%Y/%B/%d\n", &today);
-	printf("%s\n", asctime(&today));
-	printf("%s\n", date_str);
 
-	// putting the command together
-	char command[100];
-	strncpy(command, "gedit ", 10);
-	strncat(command, getenv("HOME"), 50);
-	strncat(command, "/Documents/journal/", 20);
-	strncat(command, date_str, 20);
-	printf("%s\n", command);
+	// putting the journal path together
+	char journal_path[90];
+	strncat(journal_path, getenv("HOME"), 50);
+	strncat(journal_path, "/Documents/journal/", 20);
+	strncat(journal_path, date_str, 20);
+	
+	// for when the file doesn't exist
+	
 
-	// executing on the final path
+	// executing the text editor on the journal path
+	char command[100] = "gedit ";
+	strncat(command, journal_path, 90);
 	system(command);
 
 	return 0;
