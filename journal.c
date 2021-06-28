@@ -4,57 +4,63 @@
 #include <time.h>
 #include <regex.h>
 
-// const number of seconds in a day
+// the number of seconds in a day
 const int DAY = 86400;
+// regex to recognize dates
+const char reg_date[] = "^20[0-9][0-9][/-](0[1-9]|1[012])[/-](0[1-9]|[12][0-9]|3[01])$";
+// regex to recognize integers
+const char reg_int[] = "^[+-][0-9]{1,3}$";
 
-// void get_date(char *buf, char *arg)
-// {
-// 	regex_t date_regex;
-// 	char *pattern = "^20[:number:][-/](0[:number:]|1[012])[-/](0[:number:]|[12][:number:]|3[01])$";
-// 	regcomp(&date_regex, pattern, 0);
-
-// 	if strn
-// }
-
-int reg_test(char *inp)
+// check if a string is recognized by a given regular expression
+int reg_test(char *inp, const char *reg_expr)
 {
-	regex_t date_regex;
-	regcomp(&date_regex, "^20[0-9][0-9][-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])$", REG_EXTENDED);
-	return regexec(&date_regex, inp, 0, NULL, 0) ? 0 : 1;
+	regex_t reg;
+	regcomp(&reg, reg_expr, REG_EXTENDED);
+	return regexec(&reg, inp, 0, NULL, 0) ? 0 : 1;
+}
+
+// replace all instances of one char with another
+void replace_hyphens(char *buf, char orig, char repl)
+{
+	for (int i = 0; i < strlen(buf); i++)
+	{
+		if (buf[i] == orig)
+			buf[i] = repl;
+	}
 }
 
 int main(int argc, char *argv[])
 {
+	// generating a date for the journal entry path
 	char date_str[20];
-	if (argc > 1 && reg_test(argv[1]))
-		strncpy(date_str, argv[1], 20);
-	else
+	// save the input if it matches the specific date regex and replace hyphens with slashes
+	if (argc > 1 && reg_test(argv[1], reg_date))
 	{
+		strncpy(date_str, argv[1], 20);
+		replace_hyphens(date_str, '-', '/');
+	}
+	else // retrieve the current time and adjust it if there is an integer input
+	{	 // get today's date in seconds
 		time_t rawtime = time(NULL);
-		if (argc > 1)
-		{
-			if (strncmp("yesterday", argv[1], 10) == 0)
-				rawtime -= DAY;
-			else if (strncmp("twodaysago", argv[1], 11) == 0)
-				rawtime -= DAY * 2;
-		}
+		// check for integer input and adjust the time according to it
+		if (argc > 1 && reg_test(argv[1], reg_int))
+			rawtime += atoi(argv[1]) * DAY;
+		// convert ad save the time as a date string
 		struct tm today = *localtime(&rawtime);
 		strftime(date_str, 20, "%Y/%B/%d\n", &today);
 	}
 
-	// putting the journal path together
+	// compile the file path to the journal entry
 	char journal_path[90];
-	strncat(journal_path, getenv("HOME"), 50);
+	strncpy(journal_path, getenv("HOME"), 50);
 	strncat(journal_path, "/Documents/journal/", 20);
 	strncat(journal_path, date_str, 20);
 
-	// for when the file doesn't exist
-
-	// executing the text editor on the journal path
+	// compile the command string then execute on it
 	char command[100] = "gedit ";
 	strncat(command, journal_path, 90);
-	printf("%s\n", command);
 	system(command);
+	// printf("%s\n", command);
 
 	return 0;
 }
